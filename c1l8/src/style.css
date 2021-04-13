@@ -1,0 +1,11 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+.webgl {
+  position: fixed;
+  outline: none;
+  overflow: hidden;
+  top: 0;
+  bottom: 0;
+}
