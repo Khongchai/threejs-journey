@@ -106,8 +106,56 @@ const renderer = new THREE.WebGLRenderer({
   antialias: true,
 });
 renderer.shadowMap.enabled = true;
+//You can change the type of shadow map here
+//Some map does not work with radius, for example, radius does not work with PCFSoftShadowMap
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+//Debug camera, because threejs's shadow map also uses camera
+const directionalLightCameraHelper = new THREE.CameraHelper(
+  directionalLight.shadow.camera
+);
+scene.add(directionalLightCameraHelper);
+//because it works like any camera, we can adjust its "near" and "far" value as well
+//which will represent the distance in which shadows are shown
+const shadow = gui.addFolder("shadow camera");
+directionalLight.shadow.camera.near = 1;
+directionalLight.shadow.camera.far = 6;
+shadow.add(directionalLight.shadow.camera, "near", 0, 20).onChange(() => {
+  updateShadow();
+});
+shadow.add(directionalLight.shadow.camera, "far", 0, 20).onChange(() => {
+  updateShadow();
+});
+//And because threejs is using OrthographicCamera for the shadow map from DirectionalLight,
+//we can set how far each side of the camera can see with top, right, bottom, and left.
+shadow
+  .add(directionalLight.shadow.camera, "top", -10, 10, 0.01)
+  .onChange(() => {
+    updateShadow();
+  });
+shadow
+  .add(directionalLight.shadow.camera, "right", -10, 10, 0.01)
+  .onChange(() => {
+    updateShadow();
+  });
+shadow
+  .add(directionalLight.shadow.camera, "left", -10, 10, 0.01)
+  .onChange(() => {
+    updateShadow();
+  });
+shadow
+  .add(directionalLight.shadow.camera, "bottom", -10, 10, 0.01)
+  .onChange(() => {
+    updateShadow();
+  });
+function updateShadow() {
+  directionalLight.shadow.camera.updateProjectionMatrix();
+  directionalLightCameraHelper.update();
+}
+gui.add(directionalLightCameraHelper, "visible").name("Shadow helper");
+directionalLight.shadow.radius = 10;
 
 /**
  * Animate
