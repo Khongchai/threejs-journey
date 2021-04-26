@@ -2,6 +2,10 @@ import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
+import { getHouse } from "./House/house";
+import { getYard } from "./Yard/yard";
+import { getAmbientLight } from "./Light/ambientLight";
+import { getMoonLight } from "./Light/moonLight";
 
 /**
  * Base
@@ -21,94 +25,37 @@ const scene = new THREE.Scene();
 const textureLoader = new THREE.TextureLoader();
 
 /**
- * House
+ * Structure
  */
-//House container
-const house = new THREE.Group();
+const house = getHouse(textureLoader);
 scene.add(house);
 
-//Walls
-const walls = new THREE.Mesh(
-  new THREE.BoxGeometry(4, 2.5, 4),
-  new THREE.MeshStandardMaterial({ color: "#ac8e82" })
-);
-walls.position.y = walls.geometry.parameters.height / 2;
-house.add(walls);
-
-//Roof
-const roof = new THREE.Mesh(
-  new THREE.ConeGeometry(3.5, 1, 4),
-  new THREE.MeshStandardMaterial({ color: "#b35f45" })
-);
-roof.rotation.y = Math.PI * 0.25;
-//prettier-ignore
-roof.position.y =
-  walls.geometry.parameters.height + (roof.geometry.parameters.height / 2);
-house.add(roof);
-
-//Door
-const door = new THREE.Mesh(
-  new THREE.PlaneGeometry(2, 2),
-  new THREE.MeshStandardMaterial({ color: "#aa7b7b" })
-);
-door.position.y = 1;
-//prettier-ignore
-//0.01 is to prevent z-fighting; basically set explicitly which one is on top
-door.position.z = (walls.geometry.parameters.depth / 2) + 0.01;
-house.add(door);
-
-/**
- * Floor
- */
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(20, 20),
-  new THREE.MeshStandardMaterial({ color: "#a9c388" })
-);
-floor.rotation.x = -Math.PI * 0.5;
-floor.position.y = 0;
-scene.add(floor);
-
-//Bush
-//Instead of one geometry for each bush, we have all the bushes share 1 material. More performant this way.
-const bushGeometry = new THREE.SphereGeometry(1, 16, 16);
-const bushMaterial = new THREE.MeshStandardMaterial({ color: "#89c854" });
-
-const bush1 = new THREE.Mesh(bushGeometry, bushMaterial);
-bush1.scale.set(0.5, 0.5, 0.5);
-bush1.position.set(0.8, 0.2, 2.2);
-
-const bush2 = new THREE.Mesh(bushGeometry, bushMaterial);
-bush2.scale.set(0.25, 0.25, 0.25);
-bush2.position.set(1.4, 0.1, 2.1);
-
-const bush3 = new THREE.Mesh(bushGeometry, bushMaterial);
-bush3.scale.set(0.4, 0.4, 0.4);
-bush3.position.set(-0.8, 0.1, 2.2);
-
-const bush4 = new THREE.Mesh(bushGeometry, bushMaterial);
-bush4.scale.set(0.15, 0.15, 0.15);
-bush4.position.set(-1, 0.05, 2.6);
-
-house.add(bush1, bush2, bush3, bush4);
-
-//Todo: add some more stuff and refactor to different files
+const yard = getYard(textureLoader);
+scene.add(yard);
 
 /**
  * Lights
  */
 // Ambient light
-const ambientLight = new THREE.AmbientLight("#ffffff", 0.5);
-gui.add(ambientLight, "intensity").min(0).max(1).step(0.001);
+const ambientLight = getAmbientLight();
+const ambientLightFolder = gui.addFolder("ambientLight");
+ambientLightFolder.add(ambientLight, "intensity").min(0).max(1).step(0.001);
 scene.add(ambientLight);
 
 // Directional light
-const moonLight = new THREE.DirectionalLight("#ffffff", 0.5);
-moonLight.position.set(4, 5, -2);
-gui.add(moonLight, "intensity").min(0).max(1).step(0.001);
-gui.add(moonLight.position, "x").min(-5).max(5).step(0.001);
-gui.add(moonLight.position, "y").min(-5).max(5).step(0.001);
-gui.add(moonLight.position, "z").min(-5).max(5).step(0.001);
+const moonLight = getMoonLight();
+const moonLightFolder = gui.addFolder("moonLight");
+moonLightFolder.add(moonLight, "intensity").min(0).max(1).step(0.001);
+moonLightFolder.add(moonLight.position, "x").min(-5).max(5).step(0.001);
+moonLightFolder.add(moonLight.position, "y").min(-5).max(5).step(0.001);
+moonLightFolder.add(moonLight.position, "z").min(-5).max(5).step(0.001);
 scene.add(moonLight);
+
+/**
+ * Fog
+ */
+const fog = new THREE.Fog("#262837", 1, 15);
+scene.fog = fog;
 
 /**
  * Sizes
@@ -156,9 +103,11 @@ controls.enableDamping = true;
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
+  antialias: true,
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor("#262837");
 
 /**
  * Animate
