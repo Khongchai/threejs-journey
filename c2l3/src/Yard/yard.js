@@ -39,6 +39,7 @@ export function getYard(textureLoader) {
   );
   ground.rotation.x = -Math.PI * 0.5;
   ground.position.y = 0;
+  ground.receiveShadow = true;
   yard.add(ground);
 
   const graveGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.2);
@@ -53,6 +54,7 @@ export function getYard(textureLoader) {
 
     //Create the mesh
     const grave = new THREE.Mesh(graveGeometry, graveMaterial);
+    grave.castShadow = true;
 
     //Position
     grave.position.set(x, 0.3, z);
