@@ -115,7 +115,7 @@ scene.add(camera);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.autoRotate = true;
-controlCamereaOnMouseEnter(canvas, camera, controls, sizes);
+// controlCamereaOnMouseEnter(canvas, camera, controls, sizes);
 /**
  * Renderer
  */

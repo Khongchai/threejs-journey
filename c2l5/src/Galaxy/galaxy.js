@@ -62,10 +62,15 @@ export const generateGalaxyAndAddToScene = (parameters, scene) => {
       parameters.randomness,
       radius
     );
-    positions[xVertex] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+    positions[xVertex] =
+      Math.cos(branchAngle + spinAngle) * radius +
+      randomX +
+      disperseIfMiddle(radius, parameters.radius, "x");
     positions[xVertex + 1] = randomY;
     positions[xVertex + 2] =
-      Math.sin(branchAngle + spinAngle) * radius + randomZ;
+      Math.sin(branchAngle + spinAngle) * radius +
+      randomZ +
+      disperseIfMiddle(radius, parameters.radius, "y");
 
     colors[xVertex] = mixedColor.r;
     colors[xVertex + 1] = mixedColor.g;
@@ -104,4 +109,27 @@ function getRandomVal(squeezePower, randomness, radius) {
     randomness *
     radius;
   return randomVal;
+}
+
+/**
+ *
+ * @param {number} randomizedRadius
+ * @param {number} originalRadius
+ * If randomized radius turns out to be less than 10% of the original radius's length,
+ * disperse the value randomly inside the middle's circle, else returns 1.
+ *
+ */
+//NOT DONE
+function disperseIfMiddle(randomizedRadius, originalRadius, axis) {
+  //value of middlePosition is arbitrary, can be anywhere that feels kind of "in the middle".
+  const middleCircleRadius = 0.1 * originalRadius;
+  const middleCircleArea = (Math.PI * middleCircleRadius) ** 2;
+  const randomPositionInTheCircle =
+    axis === "y"
+      ? Math.sin(Math.random() * Math.PI * 2) * middleCircleRadius
+      : Math.cos(Math.random() * Math.PI * 2) * middleCircleRadius;
+  if (randomizedRadius < middleCircleRadius) {
+    return randomPositionInTheCircle;
+  }
+  return 1;
 }
