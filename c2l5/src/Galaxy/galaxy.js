@@ -25,6 +25,18 @@ export const generateGalaxyAndAddToScene = (parameters, scene) => {
     //Randomize all the position of all vertices.
     const xVertex = i * 3;
     const radius = Math.random() * parameters.radius;
+
+    /**
+     * The mixedColor value is based on how far a particle is from its center,
+     * in other words, the larger the radius, the closer to the colorInside value
+     * it becomes.
+     *
+     * Lerp (linear interpolation) takes a value between 0 and 1.
+     * lerp method for Color https://threejs.org/docs/?q=color#api/en/math/Color
+     */
+    const mixedColor = colorInside.clone();
+    mixedColor.lerp(colorOutside, radius / parameters.radius);
+
     /**
      * Modulo = get angle; 3 = 3 modulo possibilities, so 3 angles.
      * Division by params.branches = get value getween 0 to 1
@@ -55,9 +67,9 @@ export const generateGalaxyAndAddToScene = (parameters, scene) => {
     positions[xVertex + 2] =
       Math.sin(branchAngle + spinAngle) * radius + randomZ;
 
-    colors[xVertex] = 1;
-    colors[xVertex + 1] = 0;
-    colors[xVertex + 2] = 0;
+    colors[xVertex] = mixedColor.r;
+    colors[xVertex + 1] = mixedColor.g;
+    colors[xVertex + 2] = mixedColor.b;
   }
 
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));

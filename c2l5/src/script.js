@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
 import { generateGalaxyAndAddToScene } from "./Galaxy/galaxy";
+import { controlCamereaOnMouseEnter } from "./utils/canvas/controlCameraOnMouseEnter";
 
 /**
  * Base
@@ -76,7 +77,7 @@ function ggaasc() {
 /**
  * Sizes
  */
-const sizes = {
+export const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
 };
@@ -113,7 +114,8 @@ scene.add(camera);
 // Controls
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
-
+controls.autoRotate = true;
+controlCamereaOnMouseEnter(canvas, camera, controls, sizes);
 /**
  * Renderer
  */
