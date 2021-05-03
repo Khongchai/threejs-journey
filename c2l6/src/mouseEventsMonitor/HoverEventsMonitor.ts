@@ -17,7 +17,6 @@ export class HoverEventsMonitor {
   private hoveredObjects: THREE.Intersection[];
   private mouseCoordinate: THREE.Vector2;
   private camera: THREE.PerspectiveCamera;
-  flag = 0;
 
   constructor(
     initialHoverState: CustomHoverEvents,
