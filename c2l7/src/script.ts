@@ -2,7 +2,8 @@ import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
-import CANNON from "cannon";
+import CANNON, { World } from "cannon";
+import { Vector3 } from "three";
 
 /**
  * Idea: physics world of threejs is an alternate world that we cannot see
@@ -54,7 +55,28 @@ const environmentMapTexture = cubeTextureLoader.load([
 /**
  * Physics
  */
-const world = new CANNON.World();
+const physicsWorld = new CANNON.World();
+physicsWorld.gravity.set(0, -9.82, 0);
+
+//Bodies are objects that will fall and collide with other objects
+//Shape determines the shape of that body
+const sphereShape = new CANNON.Sphere(0.5);
+const sphereBody = new CANNON.Body({
+  mass: 1,
+  //Same position as the threejs sphere
+  position: new CANNON.Vec3(0, 3, 0),
+  shape: sphereShape,
+});
+physicsWorld.addBody(sphereBody);
+
+const floorShape = new CANNON.Plane();
+const floorBody = new CANNON.Body();
+//We don't want the floor to fall, so mass = 0;
+floorBody.mass = 0;
+floorBody.addShape(floorShape);
+physicsWorld.addBody(floorBody);
+
+floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
 
 /**
  * Test sphere
@@ -158,9 +180,19 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
  * Animate
  */
 const clock = new THREE.Clock();
+let oldElapsedTime = 0;
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - oldElapsedTime;
+  oldElapsedTime = elapsedTime;
+
+  //Update physics
+  //TODO: read more about this
+  physicsWorld.step(1 / 60, deltaTime, 3);
+  //After updating the physicsWorld, update the real world as well
+  //Can be done by copying each coordinate separately, or like so:
+  sphere.position.copy((sphereBody.position as unknown) as Vector3);
 
   // Update controls
   controls.update();
