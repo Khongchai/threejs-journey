@@ -4,6 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
 import CANNON, { World } from "cannon";
 import { Vector3 } from "three";
+import { createNonNullChain } from "typescript";
 
 /**
  * Idea: physics world of threejs is an alternate world that we cannot see
@@ -58,6 +59,36 @@ const environmentMapTexture = cubeTextureLoader.load([
 const physicsWorld = new CANNON.World();
 physicsWorld.gravity.set(0, -9.82, 0);
 
+//CANNON.js' ContactMaterial; defines what happens when two materials meet (ex. when a ball falls down onto the floor).
+//CANNON.js' Material is just a reference; this reference says that the properties of the contact material
+//affect the interaction between objects that have these materials
+const concreteMaterial = new CANNON.Material("concrete");
+const plasticMaterial = new CANNON.Material("plastic");
+const concretePlasticContactMaterial = new CANNON.ContactMaterial(
+  concreteMaterial,
+  plasticMaterial,
+  {
+    friction: 0.1,
+    restitution: 0.7,
+  }
+);
+physicsWorld.addContactMaterial(concretePlasticContactMaterial);
+//Having different Mateirals and ContactMaterials for each combination can be
+//difficult and impractical to manage. We can instead, create a default and use
+//it for every Bodies for the sake of simplification
+const defaultMaterial = new CANNON.Material("default");
+const defaultContactMaterial = new CANNON.ContactMaterial(
+  defaultMaterial,
+  defaultMaterial,
+  {
+    friction: 0.1,
+    restitution: 0.7,
+  }
+);
+physicsWorld.addContactMaterial(defaultContactMaterial);
+//We can also a contact material the default one for our world
+physicsWorld.defaultContactMaterial = defaultContactMaterial;
+
 //Bodies are objects that will fall and collide with other objects
 //Shape determines the shape of that body
 const sphereShape = new CANNON.Sphere(0.5);
@@ -66,6 +97,8 @@ const sphereBody = new CANNON.Body({
   //Same position as the threejs sphere
   position: new CANNON.Vec3(0, 3, 0),
   shape: sphereShape,
+  //This line is no longer necessary with the world's default material applied.
+  // material: defaultMaterial,
 });
 physicsWorld.addBody(sphereBody);
 
@@ -74,6 +107,8 @@ const floorBody = new CANNON.Body();
 //We don't want the floor to fall, so mass = 0;
 floorBody.mass = 0;
 floorBody.addShape(floorShape);
+//This line is no longer necessary with the world's default material applied.
+// floorBody.material = defaultMaterial;
 physicsWorld.addBody(floorBody);
 
 floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
@@ -193,6 +228,7 @@ const tick = () => {
   //After updating the physicsWorld, update the real world as well
   //Can be done by copying each coordinate separately, or like so:
   sphere.position.copy((sphereBody.position as unknown) as Vector3);
+  sphereBody.applyForce(new CANNON.Vec3(-0.5, 0, 0), sphereBody.position);
 
   // Update controls
   controls.update();
