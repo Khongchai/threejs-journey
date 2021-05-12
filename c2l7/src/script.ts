@@ -2,9 +2,8 @@ import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
-import CANNON, { World } from "cannon";
-import { Vector3 } from "three";
-import { createNonNullChain } from "typescript";
+import CANNON from "cannon";
+import { SpheresFactory } from "./createSphere";
 
 /**
  * Idea: physics world of threejs is an alternate world that we cannot see
@@ -91,16 +90,45 @@ physicsWorld.defaultContactMaterial = defaultContactMaterial;
 
 //Bodies are objects that will fall and collide with other objects
 //Shape determines the shape of that body
-const sphereShape = new CANNON.Sphere(0.5);
-const sphereBody = new CANNON.Body({
-  mass: 1,
+// const sphereShape = new CANNON.Sphere(0.5);
+// const sphereBody = new CANNON.Body({
+  // mass: 1,
   //Same position as the threejs sphere
-  position: new CANNON.Vec3(0, 3, 0),
-  shape: sphereShape,
+  // position: new CANNON.Vec3(0, 3, 0),
+  // shape: sphereShape,
   //This line is no longer necessary with the world's default material applied.
   // material: defaultMaterial,
-});
-physicsWorld.addBody(sphereBody);
+// });
+// physicsWorld.addBody(sphereBody);
+//Better management: add a class that manages the creation of the spheres.
+const randomSphereProps = {
+  radius: Math.random() * 0.5,
+  position: {
+    x: (Math.random() - 0.5) * 3,
+    y: 3,
+    z: (Math.random() - 0.5) * 3, 
+  }
+
+}
+const spheresFactory = new SpheresFactory(randomSphereProps.radius, randomSphereProps.position as THREE.Vector3, 
+                              environmentMapTexture, defaultMaterial, scene, physicsWorld);
+let spheres: any[] = []; 
+spheres.push(spheresFactory.getSpheresAndAddToScene());
+const sphereDebug = {
+  createSphere: () => {
+    spheres.push(spheresFactory.getSpheresAndAddToScene(
+        {
+            x: (Math.random() - 0.5) * 3,
+            y: 3,
+            z: (Math.random() - 0.5) * 3
+        } as THREE.Vector3, 
+        Math.random() * 0.5
+    ));
+  }
+}
+gui.add(sphereDebug, "createSphere");
+
+
 
 const floorShape = new CANNON.Plane();
 const floorBody = new CANNON.Body();
@@ -116,17 +144,17 @@ floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
 /**
  * Test sphere
  */
-const sphere = new THREE.Mesh(
-  new THREE.SphereGeometry(0.5, 32, 32),
-  new THREE.MeshStandardMaterial({
-    metalness: 0.3,
-    roughness: 0.4,
-    envMap: environmentMapTexture,
-  })
-);
-sphere.castShadow = true;
-sphere.position.y = 0.5;
-scene.add(sphere);
+// const sphere = new THREE.Mesh(
+//   new THREE.SphereGeometry(0.5, 32, 32),
+//   new THREE.MeshStandardMaterial({
+//     metalness: 0.3,
+//     roughness: 0.4,
+//     envMap: environmentMapTexture,
+//   })
+// );
+// sphere.castShadow = true;
+// sphere.position.y = 0.5;
+// scene.add(sphere);
 
 /**
  * Floor
@@ -205,6 +233,7 @@ controls.enableDamping = true;
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
+  antialias: true,
 });
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -227,8 +256,12 @@ const tick = () => {
   physicsWorld.step(1 / 60, deltaTime, 3);
   //After updating the physicsWorld, update the real world as well
   //Can be done by copying each coordinate separately, or like so:
-  sphere.position.copy((sphereBody.position as unknown) as Vector3);
-  sphereBody.applyForce(new CANNON.Vec3(-0.5, 0, 0), sphereBody.position);
+  // sphere.position.copy((sphereBody.position as unknown) as Vector3);
+  // sphereBody.applyForce(new CANNON.Vec3(-0.5, 0, 0), sphereBody.position);
+  for (const sphere of spheres)
+  {
+    sphere.three.position.copy(sphere.cannon.position as unknown as THREE.Vector3);
+  }
 
   // Update controls
   controls.update();
