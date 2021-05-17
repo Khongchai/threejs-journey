@@ -3,7 +3,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
 import CANNON from "cannon";
-import { SpheresFactory } from "./createSphere";
+import { SphereFactory } from "./Factories/Sphere";
+import { BoxFactory } from "./Factories/Box";
 
 /**
  * Idea: physics world of threejs is an alternate world that we cannot see
@@ -53,10 +54,24 @@ const environmentMapTexture = cubeTextureLoader.load([
 ]);
 
 /**
+ * Sounds
+ */
+const hitSound = new Audio("hit.mp3");
+const playHitSound = () => {
+  hitSound.play();
+};
+playHitSound();
+
+/**
  * Physics
  */
 const physicsWorld = new CANNON.World();
+//Broadphase time complexities + other interesting details:
+//  https://developer.nvidia.com/gpugems/gpugems3/part-v-physics-simulation/chapter-32-broad-phase-collision-detection-cuda#:~:text=In%20the%20broad%20phase%2C%20collision,set%20of%20pairs%20of%20objects.
+//  https://github.com/mattleibow/jitterphysics/wiki/Sweep-and-Prune
+physicsWorld.broadphase = new CANNON.SAPBroadphase(physicsWorld);
 physicsWorld.gravity.set(0, -9.82, 0);
+physicsWorld.allowSleep = true;
 
 //CANNON.js' ContactMaterial; defines what happens when two materials meet (ex. when a ball falls down onto the floor).
 //CANNON.js' Material is just a reference; this reference says that the properties of the contact material
@@ -92,69 +107,101 @@ physicsWorld.defaultContactMaterial = defaultContactMaterial;
 //Shape determines the shape of that body
 // const sphereShape = new CANNON.Sphere(0.5);
 // const sphereBody = new CANNON.Body({
-  // mass: 1,
-  //Same position as the threejs sphere
-  // position: new CANNON.Vec3(0, 3, 0),
-  // shape: sphereShape,
-  //This line is no longer necessary with the world's default material applied.
-  // material: defaultMaterial,
+// mass: 1,
+//Same position as the threejs sphere
+// position: new CANNON.Vec3(0, 3, 0),
+// shape: sphereShape,
+//This line is no longer necessary with the world's default material applied.
+// material: defaultMaterial,
 // });
 // physicsWorld.addBody(sphereBody);
 //Better management: add a class that manages the creation of the spheres.
-const randomSphereProps = {
+const randomGeometryProps = {
   radius: Math.random() * 0.5,
   position: {
     x: (Math.random() - 0.5) * 3,
     y: 3,
-    z: (Math.random() - 0.5) * 3, 
-  }
+    z: (Math.random() - 0.5) * 3,
+  },
+  cubeDimensions: {
+    x: Math.random(),
+    y: Math.random(),
+    z: Math.random(),
+  },
+};
 
-}
-const spheresFactory = new SpheresFactory(randomSphereProps.radius, randomSphereProps.position as THREE.Vector3, 
-                              environmentMapTexture, defaultMaterial, scene, physicsWorld);
-let spheres: any[] = []; 
-spheres.push(spheresFactory.getSpheresAndAddToScene());
+let geometries: any[] = [];
+/**
+ * Spheres
+ */
+const sphereFactory = new SphereFactory(
+  randomGeometryProps.radius,
+  randomGeometryProps.position as THREE.Vector3,
+  environmentMapTexture,
+  defaultMaterial,
+  scene,
+  physicsWorld
+);
+//geometries.push(sphereFactory.getSpheresAndAddToScene());
 const sphereDebug = {
   createSphere: () => {
-    spheres.push(spheresFactory.getSpheresAndAddToScene(
+    geometries.push(
+      sphereFactory.getSpheresAndAddToScene(
         {
-            x: (Math.random() - 0.5) * 3,
-            y: 3,
-            z: (Math.random() - 0.5) * 3
-        } as THREE.Vector3, 
+          x: (Math.random() - 0.5) * 3,
+          y: 3,
+          z: (Math.random() - 0.5) * 3,
+        } as THREE.Vector3,
         Math.random() * 0.5
-    ));
-  }
-}
+      )
+    );
+  },
+};
 gui.add(sphereDebug, "createSphere");
 
-
+/**
+ * Boxes
+ */
+const boxFactory = new BoxFactory(
+  randomGeometryProps.cubeDimensions as THREE.Vector3,
+  randomGeometryProps.position as THREE.Vector3,
+  environmentMapTexture,
+  defaultMaterial,
+  scene,
+  physicsWorld
+);
+geometries.push(boxFactory.getBoxesAndAddToScene());
+const boxesDebug = {
+  createBox: () => {
+    geometries.push(
+      boxFactory.getBoxesAndAddToScene(
+        {
+          x: (Math.random() - 0.5) * 3,
+          y: 3,
+          z: (Math.random() - 0.5) * 3,
+        } as THREE.Vector3,
+        {
+          x: Math.random(),
+          y: Math.random(),
+          z: Math.random(),
+        } as THREE.Vector3
+      )
+    );
+  },
+};
+gui.add(boxesDebug, "createBox");
 
 const floorShape = new CANNON.Plane();
 const floorBody = new CANNON.Body();
 //We don't want the floor to fall, so mass = 0;
 floorBody.mass = 0;
+floorBody.position.y = 0;
 floorBody.addShape(floorShape);
 //This line is no longer necessary with the world's default material applied.
 // floorBody.material = defaultMaterial;
 physicsWorld.addBody(floorBody);
 
 floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
-
-/**
- * Test sphere
- */
-// const sphere = new THREE.Mesh(
-//   new THREE.SphereGeometry(0.5, 32, 32),
-//   new THREE.MeshStandardMaterial({
-//     metalness: 0.3,
-//     roughness: 0.4,
-//     envMap: environmentMapTexture,
-//   })
-// );
-// sphere.castShadow = true;
-// sphere.position.y = 0.5;
-// scene.add(sphere);
 
 /**
  * Floor
@@ -258,9 +305,11 @@ const tick = () => {
   //Can be done by copying each coordinate separately, or like so:
   // sphere.position.copy((sphereBody.position as unknown) as Vector3);
   // sphereBody.applyForce(new CANNON.Vec3(-0.5, 0, 0), sphereBody.position);
-  for (const sphere of spheres)
-  {
-    sphere.three.position.copy(sphere.cannon.position as unknown as THREE.Vector3);
+  for (const geometry of geometries) {
+    geometry.three.position.copy(
+      geometry.cannon.position as unknown as THREE.Vector3
+    );
+    geometry.three.quaternion.copy(geometry.cannon.quaternion);
   }
 
   // Update controls
