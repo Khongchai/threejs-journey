@@ -2,9 +2,10 @@ import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
-import CANNON from "cannon";
+import * as CANNON from "cannon-es";
 import { SphereFactory } from "./Factories/Sphere";
 import { BoxFactory } from "./Factories/Box";
+import { playHitSound } from "./Sounds/playHitSound";
 
 /**
  * Idea: physics world of threejs is an alternate world that we cannot see
@@ -52,15 +53,6 @@ const environmentMapTexture = cubeTextureLoader.load([
   "/textures/environmentMaps/0/pz.png",
   "/textures/environmentMaps/0/nz.png",
 ]);
-
-/**
- * Sounds
- */
-const hitSound = new Audio("hit.mp3");
-const playHitSound = () => {
-  hitSound.play();
-};
-playHitSound();
 
 /**
  * Physics
@@ -131,6 +123,21 @@ const randomGeometryProps = {
 };
 
 let geometries: any[] = [];
+const debugObject = {
+  createSphere: function () {},
+  createBox: function () {},
+  reset: function () {
+    for (const geometry of geometries) {
+      //Remove cannon body
+      geometry.cannon.removeEventListener("collide", playHitSound);
+      physicsWorld.removeBody(geometry.cannon);
+
+      //Remove threejs mesh
+      scene.remove(geometry.three);
+    }
+  },
+};
+gui.add(debugObject, "reset");
 /**
  * Spheres
  */
@@ -143,21 +150,19 @@ const sphereFactory = new SphereFactory(
   physicsWorld
 );
 //geometries.push(sphereFactory.getSpheresAndAddToScene());
-const sphereDebug = {
-  createSphere: () => {
-    geometries.push(
-      sphereFactory.getSpheresAndAddToScene(
-        {
-          x: (Math.random() - 0.5) * 3,
-          y: 3,
-          z: (Math.random() - 0.5) * 3,
-        } as THREE.Vector3,
-        Math.random() * 0.5
-      )
-    );
-  },
+debugObject.createSphere = () => {
+  geometries.push(
+    sphereFactory.getSpheresAndAddToScene(
+      {
+        x: (Math.random() - 0.5) * 3,
+        y: 3,
+        z: (Math.random() - 0.5) * 3,
+      } as THREE.Vector3,
+      Math.random() * 0.5
+    )
+  );
 };
-gui.add(sphereDebug, "createSphere");
+gui.add(debugObject, "createSphere");
 
 /**
  * Boxes
@@ -171,25 +176,23 @@ const boxFactory = new BoxFactory(
   physicsWorld
 );
 geometries.push(boxFactory.getBoxesAndAddToScene());
-const boxesDebug = {
-  createBox: () => {
-    geometries.push(
-      boxFactory.getBoxesAndAddToScene(
-        {
-          x: (Math.random() - 0.5) * 3,
-          y: 3,
-          z: (Math.random() - 0.5) * 3,
-        } as THREE.Vector3,
-        {
-          x: Math.random(),
-          y: Math.random(),
-          z: Math.random(),
-        } as THREE.Vector3
-      )
-    );
-  },
+debugObject.createBox = () => {
+  geometries.push(
+    boxFactory.getBoxesAndAddToScene(
+      {
+        x: (Math.random() - 0.5) * 3,
+        y: 3,
+        z: (Math.random() - 0.5) * 3,
+      } as THREE.Vector3,
+      {
+        x: Math.random(),
+        y: Math.random(),
+        z: Math.random(),
+      } as THREE.Vector3
+    )
+  );
 };
-gui.add(boxesDebug, "createBox");
+gui.add(debugObject, "createBox");
 
 const floorShape = new CANNON.Plane();
 const floorBody = new CANNON.Body();

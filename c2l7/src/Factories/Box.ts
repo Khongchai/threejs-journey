@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import * as CANNON from "cannon";
+import * as CANNON from "cannon-es";
+import { playHitSound } from "../Sounds/playHitSound";
 
 /**
  * Get threejs and cannonjs cubes.
@@ -66,6 +67,7 @@ export class BoxFactory {
       material: this.physicsMaterial,
     });
     cannonBody.position.copy(position as unknown as CANNON.Vec3);
+    cannonBody.addEventListener("collide", playHitSound);
 
     this.scene.add(threeMesh);
     this.world.addBody(cannonBody);
