@@ -60,6 +60,7 @@ gltfLoader.load(
     // console.error(error);
   }
 );
+let mixer = null;
 gltfLoader.load(
   "models/Fox/glTF/Fox.gltf",
   (gltf) => {
@@ -67,6 +68,14 @@ gltfLoader.load(
     //Instead, we'll scale the scene that contains the fox!
     const scaleVal = 0.025;
     gltf.scene.scale.set(scaleVal, scaleVal, scaleVal);
+
+    //an object of AnimationMixer class contains all animations o f AnimationClip class associated with a nobject.
+    //The line below tells the mixer to get all the animation data from the scene
+    mixer = new THREE.AnimationMixer(gltf.scene);
+    //The line below plays the animation passed as argument.
+    const action = mixer.clipAction(gltf.animations[1]);
+    action.play();
+
     scene.add(gltf.scene);
     console.log(gltf);
   },
@@ -170,6 +179,10 @@ const tick = () => {
   const elapsedTime = clock.getElapsedTime();
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
+
+  if (mixer) {
+    mixer.update(deltaTime);
+  }
 
   // Update controls
   controls.update();
