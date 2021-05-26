@@ -3,12 +3,14 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { sRGBEncoding } from "three";
 
 /**
  * Base
  */
 // Debug
 const gui = new dat.GUI();
+const debugObject = { envMapIntensity: 5 };
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
@@ -96,8 +98,9 @@ const updateAllMaterials = (scene) => {
       child.material instanceof THREE.MeshStandardMaterial
     ) {
       child.material.envMap = environmentMap;
-      child.material.envMapIntensity = 5;
+      child.material.envMapIntensity = debugObject.envMapIntensity;
     }
+    console.log(child);
   });
 };
 gltfLoader.load("/models/FlightHelmet/glTF/FlightHelmet.gltf", (gltf) => {
@@ -113,11 +116,19 @@ gltfLoader.load("/models/FlightHelmet/glTF/FlightHelmet.gltf", (gltf) => {
     .step(0.001)
     .name("rotation");
 });
+gui
+  .add(debugObject, "envMapIntensity")
+  .min(0)
+  .max(10)
+  .step(0.001)
+  .onChange(() => updateAllMaterials(scene));
 
 /**
  * Environment map
  */
 const cubeTextureLoader = new THREE.CubeTextureLoader();
+//Textures that we can see should be sRGBEncoding, else LinearEncoding (for realism).
+//The GLTFLoader have this rule implemented automatically.
 const environmentMap = cubeTextureLoader.load([
   "/textures/environmentMaps/0/px.jpg",
   "/textures/environmentMaps/0/nx.jpg",
@@ -126,6 +137,7 @@ const environmentMap = cubeTextureLoader.load([
   "/textures/environmentMaps/0/pz.jpg",
   "/textures/environmentMaps/0/nz.jpg",
 ]);
+environmentMap.encoding = sRGBEncoding;
 scene.background = environmentMap;
 
 // Controls
@@ -142,6 +154,8 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.physicallyCorrectLights = true;
+//Refer to gamma vs linear colorspace notes for more details
+renderer.outputEncoding = THREE.sRGBEncoding;
 
 /**
  * Animate

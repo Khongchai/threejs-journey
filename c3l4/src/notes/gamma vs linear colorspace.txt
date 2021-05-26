@@ -1,0 +1,13 @@
+outputEncodings that produce realistic results are sRGBEncoding and gammaEncoding.
+
+What are they? (spoiler, they are about colors)
+
+sRGB and Gamma are both ways of encoding color intensity into an image.
+
+
+{To be summarized}
+
+img sources:
+
+ https://www.kinematicsoup.com/news/2016/6/15/gamma-and-linear-space-what-they-are-how-they-differ
+ https://medium.com/game-dev-daily/the-srgb-learning-curve-773b7f68cf7a
