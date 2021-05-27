@@ -23,7 +23,12 @@ const scene = new THREE.Scene();
  */
 //Most of the heavy lifting for realistic renders will be taken care of by the environment map.
 const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
+directionalLight.castShadow = true;
 directionalLight.position.set(0.25, 3, -2.25);
+//This is needed because the far value of the shadow camera need not be further than the only visible object in the scene.
+directionalLight.shadow.camera.far = 15;
+//bias removes acne on flat surfaces, while normalBias helps for rounded ones
+directionalLight.shadow.normalBias = 0.05;
 scene.add(directionalLight);
 gui
   .add(directionalLight, "intensity")
@@ -49,6 +54,11 @@ gui
   .max(5)
   .step(0.001)
   .name("lightZ");
+directionalLight.shadow.mapSize.set(1024, 1024);
+// const directionalLightCameraHelper = new THREE.CameraHelper(
+//   directionalLight.shadow.camera
+// );
+// scene.add(directionalLightCameraHelper);
 
 /**
  * Sizes
@@ -90,7 +100,7 @@ scene.add(camera);
  */
 const gltfLoader = new GLTFLoader();
 //For updating materials to use envMap to lighten themselves.
-const updateAllMaterials = (scene) => {
+const updateAllMaterials = () => {
   scene.traverse((child) => {
     //Only apply envMap to materials, not lights, camera, etc.
     if (
@@ -99,16 +109,18 @@ const updateAllMaterials = (scene) => {
     ) {
       child.material.envMap = environmentMap;
       child.material.envMapIntensity = debugObject.envMapIntensity;
+      child.material.needsUpdate = true;
+      child.castShadow = true;
+      child.receiveShadow = true;
     }
-    console.log(child);
   });
 };
-gltfLoader.load("/models/FlightHelmet/glTF/FlightHelmet.gltf", (gltf) => {
-  gltf.scene.scale.set(10, 10, 10);
-  gltf.scene.position.set(0, -4, 0);
+gltfLoader.load("/models/hamburger.glb", (gltf) => {
+  gltf.scene.scale.set(0.3, 0.3, 0.3);
+  gltf.scene.position.set(0, -1, 0);
   gltf.scene.rotation.y = Math.PI * 0.5;
   scene.add(gltf.scene);
-  updateAllMaterials(scene);
+  updateAllMaterials();
   gui
     .add(gltf.scene.rotation, "y")
     .min(-Math.PI)
@@ -121,7 +133,7 @@ gui
   .min(0)
   .max(10)
   .step(0.001)
-  .onChange(() => updateAllMaterials(scene));
+  .onChange(() => updateAllMaterials());
 
 /**
  * Environment map
@@ -151,11 +163,43 @@ const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
   antialias: true,
 });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.physicallyCorrectLights = true;
 //Refer to gamma vs linear colorspace notes for more details
 renderer.outputEncoding = THREE.sRGBEncoding;
+/**
+ * For many HDR images, the dynamic range within is usually too high to be displayed on monitors,
+ * for example, an HDR photo can have 100,000:1 dynamic range will need to under go tone maping so that the tonal values
+ * fallbetween 1 and 255.
+ *
+ * In essence, tone mapping convert an HDR image into an LDR image.
+ * Tone mapping is necessary because monitors are not capable of capturing all the details HDR has to offer,
+ * tone mapping is there to help reduce the range from an HDR image while still keeping the realism that comes with HDR.
+ * There are many mapping algorithms in THREEJS, each boasts their own unique aesthetics
+ * https://skylum.com/blog/what-is-tone-mapping
+ *
+ * While our textures are not necessarily in HDR, applying tone mapping can help bringing the brightness of the scene down
+ * and highlights the dark/light differences.
+ */
+renderer.toneMapping = THREE.ReinhardToneMapping;
+gui
+  .add(renderer, "toneMapping", {
+    No: THREE.NoToneMapping,
+    Linear: THREE.LinearToneMapping,
+    Reinhard: THREE.ReinhardToneMapping,
+    Cineon: THREE.CineonToneMapping,
+    ACESFilmic: THREE.ACESFilmicToneMapping,
+  })
+  .onFinishChange(() => {
+    renderer.toneMapping = Number(renderer.toneMapping);
+    //Needed to apply toneMapping to materials, else only envMap will have toneMapping applied.
+    updateAllMaterials();
+  });
+renderer.toneMappingExposure = 3;
+gui.add(renderer, "toneMappingExposure").min(0).max(10).step(0.001);
 
 /**
  * Animate
@@ -172,3 +216,7 @@ const tick = () => {
 };
 
 tick();
+
+/**
+ * Other possible modifications: make sure direcitonaLight mathces the lighting of the environment.
+ */
