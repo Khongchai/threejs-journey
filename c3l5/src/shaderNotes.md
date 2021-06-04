@@ -30,3 +30,9 @@
 # Why write our own shaders?
 
 - Even for a material like MeshStandardMaterial, it still involves a lot of code. With our own shaders, we have complete control over the amount of code that gets run.
+
+Read more: https://www.khronos.org/opengl/wiki/Rendering_Pipeline_Overview
+
+Rendering Pipeline
+
+![Rendering Pipeline](../static/RenderingPipeline.png)
