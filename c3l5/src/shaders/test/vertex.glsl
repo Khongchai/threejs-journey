@@ -1,6 +1,13 @@
 //Deals with the position of matrices; manipulate mesh vertex positions here: make flags, waves, weird shapes, etc.
 
-
+/*
+    If uniforms are data that don't change between matrices, how then, did we obtain all these uniforms?
+    Uniforms like projectionMatrix, viewMatrix, and modelMatrix are passed to us by ThreeJS.
+    Other uniforms, if we want, we can create ourselves in js and passed them here. 
+*/
+//uFrequency is our custom uniform!
+uniform vec2 uFrequency;
+uniform float uTime;
 
 /*
     Clip space
@@ -9,29 +16,35 @@
 //Anything that falls outside of the specified coordinates gets clipped out.
 //The portion that remains inside the clip space is called a frustum
 uniform mat4 projectionMatrix;
-
-
 /*
     View space (camera)
 */
-//Retrieve all transformations relative to the camera; camera t oleft, verts go right, camera dolly in, verts bigger.
+//Retrieve all transformations relative to the camera; camera to left, verts go right, camera dolly in, verts bigger.
 uniform mat4 viewMatrix;
-
-
 /*
     world space
 */
 //Retreive all transformations relative to the mesh, like scale, rotate, or move, and position it into a world space.
 uniform mat4 modelMatrix;
-
 //More >> important read https://learnopengl.com/Getting-started/Coordinate-Systems
 
 /*
     Local space
 */
-//retrieve the vertex position
+//retrieve the vertex position (from threejs geometry)
 attribute vec3 position;
-uniform float uTime;
+
+//Get attribute from threejs
+attribute float aRandom;
+//Varying for fragment shader
+varying float vRandom;
+
+attribute vec2 uv;
+varying vec2 vUv;
+
+varying float vElevation;
+
+
 
 void main()
 {
@@ -54,9 +67,25 @@ void main()
 
     //You can control the position of the model with this
     vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
     float amplitudeReduction = 0.1;
     float frequencyCompression = 10.0;
-    modelPosition.z = sin(modelPosition.x * frequencyCompression) * amplitudeReduction;
+    //Normalized coordiantes in local space is from -.5 to .5
+    //This line prevents the part of the flag at the pole from waving
+    if (modelPosition.x != 0.5)
+    {
+        float elevation = sin(modelPosition.x * uFrequency.x + uTime) * amplitudeReduction;
+        elevation += sin(modelPosition.y * uFrequency.y - uTime) * amplitudeReduction;
+        modelPosition.z += elevation;
+
+        vElevation = modelPosition.z;
+    }
+
+    vUv = uv;
+
+    //We can apply the attribute from threejs like so 
+    // modelPosition.z += aRandom * 0.1;
+    vRandom = aRandom;
 
     vec4 viewPosition = viewMatrix * modelPosition;
     vec4 projectedPosition = projectionMatrix * viewPosition;

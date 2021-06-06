@@ -21,21 +21,60 @@ const scene = new THREE.Scene();
  * Textures
  */
 const textureLoader = new THREE.TextureLoader();
+const flagTexture = textureLoader.load("/textures/flag-french.jpg");
 
 /**
  * Test mesh
  */
 // Geometry
-const geometry = new THREE.PlaneGeometry(1, 1, 32, 32);
+const geometry = new THREE.PlaneGeometry(1, 1, 200, 200);
+const count = geometry.attributes.position.count;
+const randoms = new Float32Array(count);
+for (let i = 0; i < count; i++) {
+  randoms[i] = Math.random();
+}
+//An attribute named aRandom (a for attribute) is now passed to the shader engine.
+//First param = data array, second param = how many values compose one attribute, for example, 3 for position. We are just doing random pos for every vertex, so 1 is fine.
+geometry.setAttribute("aRandom", new THREE.BufferAttribute(randoms, 1));
 
 // Material
+/**
+ * THREE.ShaderMaterial works just as well, amongst the differences is the fact that 
+ * ShaderMaterial comes prepended with stuff like these 
+ * uniform mat4 projectionMatrix;
+  uniform mat4 viewMatrix;
+  uniform mat4 modelMatrix;
+  attribute vec3 position;
+  attribute vec2 uv;
+  precision mediump float;
+ */
 const material = new THREE.RawShaderMaterial({
   vertexShader: testVertexShader,
   fragmentShader: testFragmentShader,
+  uniforms: {
+    uFrequency: { value: new THREE.Vector2(10, 5) },
+    uTime: { value: 0 },
+    uColor: { value: new THREE.Color("orange") },
+    uTexture: { value: flagTexture },
+  },
 });
+
+gui
+  .add(material.uniforms.uFrequency.value, "x")
+  .min(0)
+  .max(20)
+  .step(0.01)
+  .name("frequencyX");
+gui
+  .add(material.uniforms.uFrequency.value, "y")
+  .min(0)
+  .max(20)
+  .step(0.01)
+  .name("frequencyY");
 
 // Mesh
 const mesh = new THREE.Mesh(geometry, material);
+mesh.scale.y = 2 / 3;
 scene.add(mesh);
 
 /**
@@ -82,6 +121,7 @@ controls.enableDamping = true;
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
+  antialias: true,
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -93,6 +133,9 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  //Update material
+  material.uniforms.uTime.value = elapsedTime;
 
   // Update controls
   controls.update();
