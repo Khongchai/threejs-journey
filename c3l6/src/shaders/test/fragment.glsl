@@ -113,7 +113,7 @@ void main()
         }
         float strength = random(vUv);
         gl_FragColor = vec4(vec3(strength), 1.0); 
-        Understanding the function
+        Understanding the function 
         TODO: come back to this
         Let's look at the dot product part first:
 
@@ -129,12 +129,31 @@ void main()
         float strength = random(gridUv);
         gl_FragColor = vec4(vec3(strength), 1.0);   
 
+        Color based on the lenght of each vector.
+        Length of each vector is defined by the Euclidean norm, i.e. the square root of the sum of the squared coordinate x and y.
+        float strength = length(vUv);
+        gl_FragColor = vec4(vec3(strength), 1.0);   
 
+        Now, we will create a dark circle right at the center of the plane.
+        How? The coordinate goes from 0 to 1 for both x and y, therefore, the very center
+        sits at (0.5, 0.5).
+        Knowing this, we can use the distance between the center and each vertex as the color.
+        float strength = distance(vUv, vec2(0.5));
+
+
+        limit as x approaches 0 of 0.015 / x is infinity. So we creating a really bright dot in the middle, essentially.
+        float strength =  0.015 / distance(vUv, vec2(0.5));
+        gl_FragColor = vec4(vec3(strength), 1.0);      
+
+        Same as prev but we are squeezing only one axis, the y axis. If we squeeze both, we get a smaller dot, 
+        but if we squeeze only one, we get an elongated line.
+        The addition and subtraction is just for recentering.
+        float strength =  0.15 / (distance((vec2(vUv.x, (vUv.y-0.5) * 5.0 + 0.5)), vec2(0.5)));
+        gl_FragColor = vec4(vec3(strength), 1.0);      
 
     */
 
-    vec2 gridUv = vec2(floor(vUv.x * 10.0) / 10.0, floor((vUv.y + vUv.x) * 10.0) / 10.0);
-    float strength = random(gridUv);
+    float strength =  0.015 / distance(vec2(vUv.x, ((vUv.y - 0.5) * 5.0) + 0.5), vec2(0.5));
     gl_FragColor = vec4(vec3(strength), 1.0);      
     
 
