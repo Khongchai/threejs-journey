@@ -14,14 +14,16 @@ float random(vec2 st)
 vec2 rotate(vec2 uv, float rotation, vec2 mid)
 {
     //where mid is only for calibration.
+    //Explanation for the formula in ./rotationFormula.md
+
     /*
-        Why are we using cos and sin for rotation?
-        First off, it's a formula that is generally used for rotating matrices: https://www.khanacademy.org/computing/pixar/sets/rotation/v/sets-8
-        
+        Formula:
+            x = xcos(θ) - ysin(θ)
+            y = xsin(θ) + ycos(θ)
     */
     return vec2(
-      cos(rotation) * (uv.x - mid.x) + sin(rotation) * (uv.y - mid.y) + mid.x,
-      cos(rotation) * (uv.y - mid.y) - sin(rotation) * (uv.x - mid.x) + mid.y
+      (uv.x - mid.x) * cos(rotation) - (uv.y - mid.y) * sin(rotation) + mid.x,
+       (uv.x - mid.x) * sin(rotation) + (uv.y - mid.y) * cos(rotation)  + mid.y
     );
 }
 
@@ -172,9 +174,8 @@ void main()
         gl_FragColor = vec4(vec3(strength), 1.0); 
     */
 
-    vec2 rotatedUv = rotate(vUv, PI * 0.25, vec2(0.5));
+    vec2 rotatedUv = rotate(vUv, PI/2.0, vec2(0.5));
     float strength = 0.15 / (distance(vec2(rotatedUv.x, (rotatedUv.y - 0.5) * 5.0 + 0.5), vec2(0.5)));
-    strength *= 0.15 / (distance(vec2(rotatedUv.y, (rotatedUv.x - 0.5) * 5.0 + 0.5), vec2(0.5)));
     gl_FragColor = vec4(vec3(strength), 1.0);      
     
 
