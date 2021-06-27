@@ -45,8 +45,8 @@ Honestly, linear algebra is a much more intuitive way of thinking about transfor
 For the equation:
 
 ```javascript
-x = xcos(θ) - ysin(θ);
-y = xsin(θ) + ycos(θ);
+x = uVu.x * cos(θ) - uVu.y * sin(θ);
+y = uVu.x * sin(θ) + uVu.x * cos(θ);
 ```
 
 Let us first transform it into a system of linear equations:
