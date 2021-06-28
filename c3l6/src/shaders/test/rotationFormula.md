@@ -7,8 +7,8 @@ Let's reduce the code down to only the essential (and difficult) part.
 What we can do is think of cos and sin as being
 
 ```javascript
-x = uv.x * cos(rotation) - uv.y * sin(rotation);
-y = uv.x * sin(rotation) + uv.y * cos(rotation);
+x = vUv.x * cos(rotation) - vUv.y * sin(rotation);
+y = vUv.x * sin(rotation) + vUv.y * cos(rotation);
 ```
 
 **OR**
@@ -45,8 +45,8 @@ Honestly, linear algebra is a much more intuitive way of thinking about transfor
 For the equation:
 
 ```javascript
-x = uVu.x * cos(θ) - uVu.y * sin(θ);
-y = uVu.x * sin(θ) + uVu.x * cos(θ);
+x = vUv.x * cos(θ) - vUv.y * sin(θ);
+y = vUv.x * sin(θ) + vUv.x * cos(θ);
 ```
 
 Let us first transform it into a system of linear equations:
@@ -57,12 +57,12 @@ cos(θ) & -sin(θ)\\
 sin(θ) & cos(θ)
 \end{bmatrix}
 \begin{bmatrix}
-uVu.x \\
-uVu.y
+vUv.x \\
+vUv.y
 \end{bmatrix}
 $$
 
-We can think of uVu.x and uVu.y as î and ĵ. This simplifies things a lot. We are now saying that I have a vector and I would like to apply this linear transformation. Let's rewrite it a bit more.
+We can think of vUv.x and vUv.y as î and ĵ. This simplifies things a lot. We are now saying that I have a vector and I would like to apply this linear transformation. Let's rewrite it a bit more.
 
 $$
 x
@@ -105,8 +105,8 @@ cos(\pi/2) & -sin(\pi/2)\\
 sin(\pi/2) & cos(\pi/2)
 \end{bmatrix}
 \begin{bmatrix}
-uVu.x \\
-uVu.y
+vUv.x \\
+vUv.y
 \end{bmatrix}
 =
 \begin{bmatrix}

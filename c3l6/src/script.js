@@ -4,6 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
 import testVertexShader from "./shaders/test/vertex.glsl";
 import testFragmentShader from "./shaders/test/fragment.glsl";
+import { Uniform, Vector2 } from "three";
 
 /**
  * Base
@@ -23,6 +24,9 @@ const scene = new THREE.Scene();
 // Geometry
 const geometry = new THREE.PlaneGeometry(1, 1, 100, 100);
 
+//Mouse
+const mouse = { x: 0, y: 0 };
+
 // Material
 const material = new THREE.ShaderMaterial({
   vertexShader: testVertexShader,
@@ -30,6 +34,7 @@ const material = new THREE.ShaderMaterial({
   side: THREE.DoubleSide,
   uniforms: {
     uTime: { value: 0 },
+    uMouse: { value: { x: mouse.x, y: mouse.y } },
   },
 });
 
@@ -57,6 +62,10 @@ window.addEventListener("resize", () => {
   // Update renderer
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
+window.addEventListener("mousemove", (event) => {
+  mouse.x = (event.clientX / window.innerWidth) * 30;
+  mouse.y = -(event.clientY / window.innerHeight) * 30;
 });
 
 /**
@@ -97,6 +106,7 @@ const tick = () => {
 
   //update material
   material.uniforms.uTime.value = elapsedTime;
+  material.uniforms.uMouse.value = { x: mouse.x, y: mouse.y };
 
   // Render
   renderer.render(scene, camera);

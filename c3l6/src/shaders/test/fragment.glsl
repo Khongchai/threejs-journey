@@ -1,4 +1,5 @@
 uniform float uTime;
+uniform vec2 uMouse;
 
 /*
     uv values go from 0.0 at the bottom left to 1.0 at the top right.
@@ -172,12 +173,60 @@ void main()
         float strength = 0.15 / (distance(vec2(vUv.x, (vUv.y - 0.5) * 5.0 + 0.5), vec2(0.5)));
         strength *= 0.15 / (distance(vec2(vUv.y, (vUv.x - 0.5) * 5.0 + 0.5), vec2(0.5)));
         gl_FragColor = vec4(vec3(strength), 1.0); 
-    */
 
-    vec2 rotatedUv = rotate(vUv, PI/2.0, vec2(0.5));
-    float strength = 0.15 / (distance(vec2(rotatedUv.x, (rotatedUv.y - 0.5) * 5.0 + 0.5), vec2(0.5)));
-    gl_FragColor = vec4(vec3(strength), 1.0);      
+        rotation
+        vec2 rotatedUv = rotate(vUv, PI/2.0, vec2(0.5));
+        float strength = 0.15 / (distance(vec2(rotatedUv.x, (rotatedUv.y - 0.5) * 5.0 + 0.5), vec2(0.5)));
+        gl_FragColor = vec4(vec3(strength), 1.0);      
+
+        This one would get us a black circle with no gradient. 
+        float reduceRadius = - 0.25;
+        float strength = step(0.5, distance(vUv, vec2(0.5)) - reduceRadius);
+        gl_FragColor = vec4(vec3(strength), 1.0);      
+
+        This one, instead of using step to get a circle, we do abs value to keep the gradient value but with a gradient
+        white spot in the middle.
+        float strength = abs(distance(vUv, vec2(0.5)) + reduceRadius);
+
+        This one gets a really small ring in the middle.
+        Note that the absolute value works because there is a reduceRadius variable that's 
+        pushing some values down below 0.
+        float reduceRadius = 0.25;
+        float strength = step(0.02, abs(distance(vUv, vec2(0.5)) - reduceRadius));
+        gl_FragColor = vec4(vec3(strength), 1.0);  
+
+        Then, using the above's equation, we can flip black to white and vice versa with 
+        float strength = 1.0 - step(0.02, abs(distance(vUv, vec2(0.5)) - reduceRadius)); 
+        Where the output of the righthand expression is either 1 or 0.
+
+        Based on the prev one, but wavy!
+        vec2 wavedUv = vec2(
+        vUv.x, 
+        vUv.y + sin(vUv.x * 30.0) * 0.1
+        );
+        float reduceRadius = 0.25;
+        float strength = 1.0 - step(0.02, abs(distance(wavedUv, vec2(0.5)) - reduceRadius));
+        gl_FragColor = vec4(vec3(strength), 1.0);      
+
+        Wavy both x and y, but also interactive!
+        vec2 wavedUv = vec2(
+            vUv.x + sin(vUv.y * uMouse.x) * 0.1, 
+            vUv.y + sin(vUv.x * uMouse.y) * 0.1
+        );
+        float reduceRadius = 0.25;
+        float strength = 1.0 - step(0.02, abs(distance(wavedUv, vec2(0.5)) - reduceRadius));
+        gl_FragColor = vec4(vec3(strength), 1.0); 
+        If you increase the strength of uMouse, it will become super crazy!     
+
+        We can also use angles as well.
+        float angle = atan(vUv.x, vUv.y);
+        gl_FragColor = angle;
+
+        */
+
+    float angle = atan(vUv.x, vUv.y);
+    float strength = angle;
+    gl_FragColor = vec4(vec3(strength), 1.0);
     
-
 }
 
