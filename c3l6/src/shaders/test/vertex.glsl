@@ -2,9 +2,15 @@
 //No need to actually do this because unlike RawShaderMaterial, the code is prepended with this already
 // attribute vec2 uv;
 varying vec2 vUv;
+const float PI = 3.1415926535897932384626433832795;
+
 
 void main()
 {
+
+    
     vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec4 modelPosition = modelViewMatrix * vec4(position, 1.0);
+
+    gl_Position = projectionMatrix * modelPosition;
 }

@@ -219,14 +219,69 @@ void main()
         If you increase the strength of uMouse, it will become super crazy!     
 
         We can also use angles as well.
+        The angle is relative to the bottom of the plane.
+        Using arctan returns 
         float angle = atan(vUv.x, vUv.y);
         gl_FragColor = angle;
 
+        Get gradient around 1 center point.
+        First line centers the 0,0 position, vertices now go from -0.5 to 0.5 for both x and y axes.
+        The arctan returns value in angle from -pi to +pi.
+        this means that if we divide it by 2pi, we'll get a value between 0.5 and -0.5.
+        We now have a linearly increasing x between -pi and +pi. 
+        Because to gl_Fragcolor, values below 0 is just black, to make use of the data below 0, 
+        we'll just incrase all values by 0.5, making the output now sanwiched between 0 and 1.
+        float angle = atan(vUv.x - 0.5, vUv.y - 0.5);
+        angle /= PI*2.0;
+        float strength = angle + 0.5;
+        gl_FragColor = vec4(vec3(strength), 1.0); 
+        This means that if you were to do anything that reflects the exact shape on a cartesian plane, 
+        you would have to offset the vertices of the center point by - 0.5 each. 
+        https://www.desmos.com/calculator/59xn2jyqfw
+
+        This angle is a proper building block for us to build a circular shape.
+        float angle = atan(vUv.x - 0.5, vUv.y - 0.5) / (PI * 2.0) + 0.5;
+
+        We can do a bunch of techniques we did in the beginning with this.
+        One would be the modulo technique:
+        float strength = mod(angle * 20.0, 1.0);
+        or sin
+        float strength = sin(angle * 100.0);
+
+        Moving droplet 
+        Combining this with another element whose movement is the integral of whatever functions we have here might produce a nice effect.
+        vec2 wavedUv = vec2(
+            vUv.x + sin(vUv.y * uMouse.x * 0.59) * 0.1,
+            vUv.y + cos(vUv.x * uMouse.y * 0.4) * 0.1
+        );
+         float reduceRadius = 0.25;
+        float strength = 1.0 - step(0.02, abs(distance(wavedUv, vec2(0.5)) - reduceRadius));
+
+        vec3 blackColor = vec3(0.0);
+        float r = mix(0.8, 0.976, vUv.x );
+        float g = mix(0.49, 0.624, vUv.y);
+        float b = mix(0.72, 0.3, vUv.y);
+
+        vec3 mixedColor = mix(blackColor, vec3(r, g, b), strength);
+
+        gl_FragColor = vec4(vec3(mixedColor), 1.0);
         */
 
-    float angle = atan(vUv.x, vUv.y);
-    float strength = angle;
-    gl_FragColor = vec4(vec3(strength), 1.0);
+        vec2 wavedUv = vec2(
+            vUv.x + sin(vUv.y * uMouse.x * 0.59) * 0.1,
+            vUv.y + cos(vUv.x * uMouse.y * 0.4) * 0.1
+        );
+         float reduceRadius = 0.25;
+        float strength = 1.0 - step(0.02, abs(distance(wavedUv, vec2(0.5)) - reduceRadius));
+
+        vec3 blackColor = vec3(0.0);
+        float r = mix(0.8, 0.976, vUv.x );
+        float g = mix(0.49, 0.624, vUv.y);
+        float b = mix(0.72, 0.3, vUv.y);
+
+        vec3 mixedColor = mix(blackColor, vec3(r, g, b), strength);
+
+        gl_FragColor = vec4(vec3(mixedColor), 1.0);
     
 }
 
