@@ -41,9 +41,9 @@ vec4 permute(vec4 x)
     return mod(((x*34.0)+1.0)*x, 289.0);
 }
 
-float cnoise(vec2 P)
+float cnoise(vec2 P, float x, float y)
 {
-    vec4 Pi = floor(P.xyxy) + vec4(0.0, 0.0, 1.0, 1.0);
+    vec4 Pi = floor(P.xyxy) + vec4(0.0, 0.0, 1.0 , 1.0);
     vec4 Pf = fract(P.xyxy) - vec4(0.0, 0.0, 1.0, 1.0);
     Pi = mod(Pi, 289.0); // To avoid truncation effects in permutation
     vec4 ix = Pi.xzxz;
@@ -59,7 +59,7 @@ float cnoise(vec2 P)
     vec2 g10 = vec2(gx.y,gy.y);
     vec2 g01 = vec2(gx.z,gy.z);
     vec2 g11 = vec2(gx.w,gy.w);
-    vec4 norm = 1.79284291400159 - 0.85373472095314 * vec4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11));
+    vec4 norm = (0.39284291400159 * (1.0/pow(y, 2.0) + 1.0)) - (0.373472095314 * x) * vec4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11));
     g00 *= norm.x;
     g01 *= norm.y;
     g10 *= norm.z;
@@ -333,8 +333,16 @@ void main()
         */
 
         // float strength = sin(cnoise(vUv * 10.0) * 20.0);
-        float strength = sin(cnoise(vUv * 10.0) * 20.0);
-        gl_FragColor = vec4(vec3(strength), 1.0);
+        vec3 blackColor = vec3(0.0);
+        float r = mix(0.8, 0.976, vUv.x );
+        float g = mix(0.49, 0.624, vUv.y);
+        float b = mix(0.72, 0.3, vUv.y);
+
+        float strength = step(0.9, sin(cnoise(vUv * (10.0), uMouse.x, uMouse.y) * 20.0 + (sin(uTime))));
+
+        vec3 mixedColor = mix(blackColor, vec3(r, g, b), strength);
+
+        gl_FragColor = vec4(vec3(mixedColor), 1.0);
     
 }
 
