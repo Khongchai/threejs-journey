@@ -4,7 +4,9 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
 import testVertexShader from "./shaders/test/vertex.glsl";
 import testFragmentShader from "./shaders/test/fragment.glsl";
-import { Uniform, Vector2 } from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { AfterimagePass } from "three/examples/jsm/postprocessing/AfterimagePass";
 
 /**
  * Base
@@ -95,6 +97,12 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+const afterImagePass = new AfterimagePass(0.7);
+composer.addPass(afterImagePass);
+
 /**
  * Animate
  */
@@ -109,7 +117,7 @@ const tick = () => {
   material.uniforms.uMouse.value = { x: mouse.x, y: mouse.y };
 
   // Render
-  renderer.render(scene, camera);
+  composer.render();
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
