@@ -7,6 +7,7 @@ import testFragmentShader from "./shaders/test/fragment.glsl";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { AfterimagePass } from "three/examples/jsm/postprocessing/AfterimagePass";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
 
 /**
  * Base
@@ -97,9 +98,25 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+const params = {
+  exposure: 1,
+  bloomStrength: 1.5,
+  bloomThreshold: 0,
+  bloomRadius: 0,
+};
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  1.5,
+  0.4,
+  0.85
+);
+bloomPass.threshold = params.bloomThreshold;
+bloomPass.strength = params.bloomStrength;
+bloomPass.radius = params.bloomRadius;
+composer.addPass(bloomPass);
 const afterImagePass = new AfterimagePass(0.7);
 composer.addPass(afterImagePass);
 
