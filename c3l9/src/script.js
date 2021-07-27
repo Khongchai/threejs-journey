@@ -71,8 +71,99 @@ const material = new THREE.MeshStandardMaterial( {
     map: mapTexture,
     normalMap: normalTexture
 })
+const depthMaterial = new THREE.MeshDepthMaterial({
+    depthPacking: THREE.RGBADepthPacking
+})
+const customUniforms = {
+    uTime: {value: 0}
+}
 material.onBeforeCompile = (shader) => {
-    console.log(shader.vertexShader)
+
+    shader.uniforms.uTime = customUniforms.uTime;
+
+    //Because all glsl are essentailly text files, we can replace the functionality of the chunks in the ShaderChunk
+    //folder with the replace() function.
+    /**
+     * The <common> chunk is directly before the main function, and it 
+     * is also present in all other chunks as well.
+     * 
+     * Retrieval of uniforms are also done here, like uTime below.
+     */
+    
+    shader.vertexShader = shader.vertexShader.replace("#include <common>", 
+    `
+        #include <common>
+
+        uniform float uTime;
+
+        mat2 get2dRotateMatrix(float _angle)
+        {
+            return mat2(cos(_angle), -sin(_angle), sin(_angle), cos(_angle));
+        }
+
+        mat2 shear2d(float lambda)
+        {
+            return mat2(1, 0, sin(lambda), 1);
+        }
+
+        
+       
+    `);
+
+    shader.vertexShader = shader.vertexShader.replace(
+        '#include <beginnormal_vertex>',
+        `
+            #include <beginnormal_vertex>
+
+            float lambda = (position.x + uTime) * 0.9;
+            mat2 rotateMatrix = shear2d(lambda);
+
+            objectNormal.xz = rotateMatrix * objectNormal.xz;
+        `
+    )
+    shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `
+            #include <begin_vertex>
+
+            transformed.xz = rotateMatrix * transformed.xz;
+        `
+    )
+
+   
+}
+depthMaterial.onBeforeCompile = (shader) =>
+{
+    shader.uniforms.uTime = customUniforms.uTime
+    shader.vertexShader = shader.vertexShader.replace(
+        '#include <common>',
+        `
+            #include <common>
+
+            uniform float uTime;
+
+            mat2 get2dRotateMatrix(float _angle)
+            {
+                return mat2(cos(_angle), - sin(_angle), sin(_angle), cos(_angle));
+            }
+
+            mat2 shear2d(float lambda)
+            {
+                return mat2(1, 0, sin(lambda), 1);
+            }
+        `
+    )
+    shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `
+            #include <begin_vertex>
+
+            float lambda = (position.x + uTime) * 0.9;
+            mat2 rotateMatrix = shear2d(lambda);
+
+            transformed.xz = rotateMatrix * transformed.xz;
+        `
+    )
 }
 
 /**
@@ -86,6 +177,7 @@ gltfLoader.load(
         const mesh = gltf.scene.children[0]
         mesh.rotation.y = Math.PI * 0.5
         mesh.material = material
+        mesh.customDepthMaterial = depthMaterial;
         scene.add(mesh)
 
         // Update materials
@@ -103,6 +195,19 @@ directionalLight.shadow.camera.far = 15
 directionalLight.shadow.normalBias = 0.05
 directionalLight.position.set(0.25, 2, - 2.25)
 scene.add(directionalLight)
+
+
+/**
+ * Plane
+ */
+ const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(15, 15, 15),
+    new THREE.MeshStandardMaterial()
+)
+plane.rotation.y = Math.PI
+plane.position.y = - 5
+plane.position.z = 5
+scene.add(plane)
 
 /**
  * Sizes
@@ -163,6 +268,9 @@ const clock = new THREE.Clock()
 const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
+    
+    //Update uTime
+    customUniforms.uTime.value = elapsedTime;
 
     // Update controls
     controls.update()
