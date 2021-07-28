@@ -13,6 +13,7 @@ import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass";
 import { TintShader } from "./customPasses/tintShader";
 import { DisplacementShader } from "./customPasses/displacementShader";
 import { FuturisticUIShader } from "./customPasses/futuristicUIShader";
+import { Grid2DShader } from "./customPasses/Grid2DShader";
 
 /**
  * Base
@@ -218,7 +219,7 @@ gui.add(tintPass.material.uniforms.uTint.value, "z")
     .name("blue");
 const rgbShiftPass = new ShaderPass(RGBShiftShader);
 effectComposer.addPass(renderPass);
-effectComposer.addPass(futuristicUIShader);
+// effectComposer.addPass(futuristicUIShader);
 // effectComposer.addPass(tintPass);
 // effectComposer.addPass(glitchPass);
 // effectComposer.addPass(dotScreenPass)
