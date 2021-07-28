@@ -10,6 +10,9 @@ import { GlitchPass } from "three/examples/jsm/postprocessing/GlitchPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { RGBShiftShader } from "three/examples/jsm/shaders/RGBShiftShader.js";
 import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass";
+import { TintShader } from "./customPasses/tintShader";
+import { DisplacementShader } from "./customPasses/displacementShader";
+import { FuturisticUIShader } from "./customPasses/futuristicUIShader";
 
 /**
  * Base
@@ -159,17 +162,24 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
  *  - If the pixel ratio is 1 and the browser supports WebGL 2, we use a WebGLMultisampleRenderTarget.
  *  - If the pixel ratio is 1 but the browser doesn't support WebGL 2, we use the WebGLRenderTarget and enable the SMAAPass.
  */
-let RenderTargetClass = null;
-const effectComposer = new EffectComposer(renderer);
 
+let RenderTargetClass = null;
 //Handle Rendertarget
 if (renderer.getPixelRatio() < 2 && renderer.capabilities.isWebGL2) {
-    RenderTargetClass = THREE.WebGLMultipleRenderTargets;
+    RenderTargetClass = THREE.WebGLMultisampleRenderTarget;
     console.log("Using WebGLMultismaplerRenderTarget");
 } else {
     RenderTargetClass = THREE.WebGLRenderTarget;
     console.log("Using WebGLRenderTarget");
 }
+const renderTarget = new RenderTargetClass(800, 600, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    encoding: THREE.sRGBEncoding,
+});
+
+const effectComposer = new EffectComposer(renderer, renderTarget);
 
 //Handle pass
 if (renderer.getPixelRatio() === 1 && !renderer.capabilities.isWebGL2) {
@@ -178,23 +188,38 @@ if (renderer.getPixelRatio() === 1 && !renderer.capabilities.isWebGL2) {
     console.log("Using SMAA");
 }
 
-const renderTarget = new RenderTargetClass(800, 600, {
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
-    format: THREE.RGBAFormat,
-    encoding: THREE.sRGBEncoding,
-});
-effectComposer.renderTarget = renderTarget;
 effectComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 effectComposer.setSize(sizes.width, sizes.height);
 const renderPass = new RenderPass(scene, camera);
 const glitchPass = new GlitchPass();
 const dotScreenPass = new DotScreenPass();
-const smaaPass = new SMAAPass();
+const displacementPass = new ShaderPass(DisplacementShader);
+displacementPass.material.uniforms.uTime.value = 0;
+const futuristicUIShader = new ShaderPass(FuturisticUIShader);
+futuristicUIShader.material.uniforms.uNormalMap.value = textureLoader.load(
+    "/textures/interfaceNormalMap.png"
+);
+const tintPass = new ShaderPass(TintShader);
+tintPass.material.uniforms.uTint.value = new THREE.Vector3();
+gui.add(tintPass.material.uniforms.uTint.value, "x")
+    .min(-1)
+    .max(1)
+    .step(0.001)
+    .name("red");
+gui.add(tintPass.material.uniforms.uTint.value, "y")
+    .min(-1)
+    .max(1)
+    .step(0.001)
+    .name("green");
+gui.add(tintPass.material.uniforms.uTint.value, "z")
+    .min(-1)
+    .max(1)
+    .step(0.001)
+    .name("blue");
 const rgbShiftPass = new ShaderPass(RGBShiftShader);
 effectComposer.addPass(renderPass);
-effectComposer.addPass(rgbShiftPass);
-effectComposer.addPass(smaaPass);
+effectComposer.addPass(futuristicUIShader);
+// effectComposer.addPass(tintPass);
 // effectComposer.addPass(glitchPass);
 // effectComposer.addPass(dotScreenPass)
 
@@ -205,6 +230,8 @@ const clock = new THREE.Clock();
 
 const tick = () => {
     const elapsedTime = clock.getElapsedTime();
+
+    displacementPass.material.uniforms.uTime.value = elapsedTime;
 
     // Update controls
     controls.update();
