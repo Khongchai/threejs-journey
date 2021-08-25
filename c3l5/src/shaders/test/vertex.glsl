@@ -70,12 +70,14 @@ void main()
 
     float amplitudeReduction = 0.1;
     float frequencyCompression = 10.0;
+    //uTime will be used to shift the sin wave in the x axis, so let's call it that.
+    float xShift = uTime;
     //Normalized coordiantes in local space is from -.5 to .5
     //This line prevents the part of the flag at the pole from waving
     if (modelPosition.x != 0.5)
     {
-        float elevation = sin(modelPosition.x * uFrequency.x + uTime) * amplitudeReduction;
-        elevation += sin(modelPosition.y * uFrequency.y - uTime) * amplitudeReduction;
+        float elevation = sin(modelPosition.x * uFrequency.x + xShift) * amplitudeReduction;
+        elevation += sin(modelPosition.y * uFrequency.y - xShift) * amplitudeReduction;
         modelPosition.z += elevation;
 
         vElevation = modelPosition.z;

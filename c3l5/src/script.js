@@ -27,14 +27,15 @@ const flagTexture = textureLoader.load("/textures/flag-french.jpg");
  * Test mesh
  */
 // Geometry
-const geometry = new THREE.PlaneGeometry(1, 1, 200, 200);
+const geometry = new THREE.PlaneGeometry(1, 1, 100, 100);
 const count = geometry.attributes.position.count;
 const randoms = new Float32Array(count);
 for (let i = 0; i < count; i++) {
   randoms[i] = Math.random();
 }
 //An attribute named aRandom (a for attribute) is now passed to the shader engine.
-//First param = data array, second param = how many values compose one attribute, for example, 3 for position. We are just doing random pos for every vertex, so 1 is fine.
+//First param = data array, second param = how many values compose one attribute, for example, 3 for position.
+//We are just doing random pos for every vertex, so 1 is fine.
 geometry.setAttribute("aRandom", new THREE.BufferAttribute(randoms, 1));
 
 // Material
