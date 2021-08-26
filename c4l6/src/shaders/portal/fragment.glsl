@@ -1,3 +1,8 @@
+uniform float uTime;
+//vec3 because rgb
+uniform vec3 uColorStart;
+uniform vec3 uColorEnd;
+
 varying vec2 vUv;
 
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
@@ -74,6 +79,24 @@ float cnoise(vec3 P){
 
 void main()
 {
-    float strength = cnoise(vec3(vUv * 5.0, 10.0));
-    gl_FragColor = vec4 (strength, strength, strength, 1.0);
+    //For some reason, the current circle model's center is way off.
+    //And the x and y are switched too.
+    vec2 calibratedUV = vec2(vUv.x + 0.25, vUv.y - 0.25);
+
+    //We're basically combining two noises together.
+    vec2 displacedUv = vUv + cnoise(vec3(vUv * 5.0, uTime * 0.1));
+    float strength = cnoise(vec3(displacedUv* 10.0, uTime * 0.2));
+
+    //Outer glow
+    float outerGlow = distance(calibratedUV, vec2(0.5)) * 7.0 - 0.5;
+    strength += outerGlow;
+
+    //Apply cool step function to match the low-poliness of the scene
+    strength = strength + step(0.0, strength) * 0.65;
+
+
+    //Final Color
+    vec3 color = mix(uColorStart, uColorEnd, strength);
+
+    gl_FragColor = vec4 (vec3(color), 1.0);
 }
